@@ -44,14 +44,34 @@ export class UserService {
 
     registerRequest.password = await bcrypt.hash(registerRequest.password, 10);
 
-    const user = await this.prismaService.user.create({
-      data: registerRequest,
-    });
+    return await this.prismaService.$transaction(async (prisma) => {
+      const user = await prisma.user.create({
+        data: registerRequest,
+      });
 
-    return {
-      name: user.name,
-      email: user.email,
-    };
+      if (user.role === 'STORE_OWNER') {
+        await prisma.store.create({
+          data: {
+            userId: user.id,
+            name: user.name,
+          },
+        });
+      }
+
+      await prisma.emailLog.create({
+        data: {
+          userId: user.id,
+          email: user.email,
+          type: 'EmailVerification',
+          status: 'Pending',
+        },
+      });
+
+      return {
+        name: user.name,
+        email: user.email,
+      };
+    });
   }
 
   async login(request: LoginUserRequest): Promise<UserResponse> {

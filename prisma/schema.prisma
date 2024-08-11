@@ -26,8 +26,10 @@ model User {
   carts     Cart[]
   orders    Order[]
   reviews   Review[]
+  emailLogs EmailLog[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  verifiedAt DateTime?
 
   @@map("users")
 }
@@ -150,6 +152,20 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@map("reviews")
+}
+
+model EmailLog{
+  id        String      @id @default(uuid())
+  userId    String
+  email     String
+  type      String   // Jenis email, misalnya 'verification'
+  status    String   // Status pengiriman, misalnya 'pending', 'sent', 'failed'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("email_log")
 }
 
 enum Role {
