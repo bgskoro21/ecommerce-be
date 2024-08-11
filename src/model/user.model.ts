@@ -12,8 +12,14 @@ export class RegisterUserRequest {
   role: UserRole;
 }
 
-export class UserResponse {
-  name: string;
+export class LoginUserRequest {
   email: string;
-  token?: string;
+  password: string;
+}
+
+export class UserResponse {
+  name?: string;
+  email?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }

@@ -20,6 +20,7 @@ model User {
   password  String
   phone     String?
   address   String?
+  refreshToken String?
   role      Role       @default(CUSTOMER)
   stores    Store[]
   carts     Cart[]

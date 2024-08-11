@@ -14,4 +14,11 @@ export class UserValidation {
     address: z.string().min(1, { message: 'Address is required' }),
     role: z.nativeEnum(UserRole, { message: 'Invalid user role' }),
   });
+
+  static readonly LOGIN: ZodType = z.object({
+    email: z.string().email({ message: 'Invalid email address' }),
+    password: z
+      .string()
+      .min(8, { message: 'Password must be at least 8 characters long' }),
+  });
 }

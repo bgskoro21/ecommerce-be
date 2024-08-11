@@ -1,7 +1,12 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 import { UserService } from './user.service';
-import { RegisterUserRequest, UserResponse } from 'src/model/user.model';
+import {
+  LoginUserRequest,
+  RegisterUserRequest,
+  UserResponse,
+} from 'src/model/user.model';
 import { WebResponse } from 'src/model/web.model';
+import { Request, Response } from 'express';
 
 @Controller('/api/users')
 export class UserController {
@@ -17,6 +22,61 @@ export class UserController {
     return {
       statusCode: 201,
       data: result,
+    };
+  }
+
+  @Post('/login')
+  @HttpCode(200)
+  async login(
+    @Body() request: LoginUserRequest,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.userService.login(request);
+    response.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000, // 15 menit
+    });
+
+    response.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+    });
+
+    return {
+      statusCode: 200,
+      message: 'Login Successfully!',
+      data: result,
+    };
+  }
+
+  @Post('/refresh')
+  @HttpCode(200)
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<WebResponse<UserResponse>> {
+    const refreshToken = req.cookies['refreshToken'];
+
+    const tokens = await this.userService.refresh(refreshToken);
+
+    response.cookie('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000, // 15 menit
+    });
+
+    response.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+    });
+
+    return {
+      statusCode: 200,
+      message: 'Refresh token successfully!',
+      data: tokens,
     };
   }
 }

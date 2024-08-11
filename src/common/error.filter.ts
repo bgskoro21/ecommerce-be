@@ -3,10 +3,11 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ZodError } from 'zod';
 
-@Catch(ZodError, HttpException)
+@Catch(ZodError, HttpException, UnauthorizedException)
 export class ErrorFilter implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
@@ -25,6 +26,11 @@ export class ErrorFilter implements ExceptionFilter {
       response.status(400).json({
         statusCode: 400,
         errors: errorDetails,
+      });
+    } else if (exception instanceof UnauthorizedException) {
+      response.status(401).json({
+        statusCode: exception.getStatus(),
+        errors: exception.getResponse(),
       });
     } else {
       response.status(500).json({
