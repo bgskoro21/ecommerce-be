@@ -128,4 +128,25 @@ export class UserService {
       throw new UnauthorizedException('Invalid refresh token!');
     }
   }
+
+  async logout(token: string): Promise<UserResponse> {
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+
+      const userId = payload.sub;
+
+      const user = await this.prismaService.user.update({
+        where: { id: userId },
+        data: {
+          refreshToken: null,
+        },
+      });
+
+      return user;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token!');
+    }
+  }
 }

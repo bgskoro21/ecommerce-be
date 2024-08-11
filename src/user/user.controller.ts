@@ -79,4 +79,24 @@ export class UserController {
       data: tokens,
     };
   }
+
+  @Post('/logout')
+  @HttpCode(200)
+  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const refreshToken = req.cookies['refreshToken'];
+
+    if (refreshToken) {
+      // Hapus refresh token dari database
+      await this.userService.logout(refreshToken);
+    }
+
+    res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) });
+
+    res.cookie('accessToken', '', { httpOnly: true, expires: new Date(0) });
+
+    res.json({
+      statusCode: 200,
+      message: 'Logout successfull!',
+    });
+  }
 }
