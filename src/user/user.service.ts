@@ -8,15 +8,17 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { PrismaService } from 'src/common/prisma.service';
 import { ValidationService } from 'src/common/validation.service';
 import {
+  ForgotPasswordRequest,
   LoginUserRequest,
   RegisterUserRequest,
+  ResetPasswordRequest,
   UserResponse,
 } from 'src/model/user.model';
 import { Logger } from 'winston';
 import { UserValidation } from './user.validation';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 
@@ -176,7 +178,7 @@ export class UserService {
     return await this.generateTokens(user.id, user.email);
   }
 
-  async generateTokens(userId: string, email: string) {
+  private async generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -216,6 +218,108 @@ export class UserService {
       return newTokens;
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token!');
+    }
+  }
+
+  async verify(token: string): Promise<UserResponse> {
+    try {
+      const payload = await this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET,
+      });
+
+      const { userId } = payload;
+
+      const user = await this.prismaService.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          verifiedAt: new Date(),
+        },
+      });
+
+      return {
+        name: user.name,
+        email: user.email,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token!');
+    }
+  }
+
+  async forgot(request: ForgotPasswordRequest): Promise<UserResponse> {
+    this.logger.debug(
+      `Forgot password request from ${JSON.stringify(request)}`,
+    );
+    const forgotPasswordRequest: ForgotPasswordRequest =
+      await this.validationService.validate(
+        UserValidation.FORGOT_PASSWORD,
+        request,
+      );
+
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        email: forgotPasswordRequest.email,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('Email not found', 404);
+    }
+
+    await this.prismaService.emailLog.create({
+      data: {
+        userId: user.id,
+        email: user.email,
+        type: 'ForgotPassword',
+        status: 'Pending',
+      },
+    });
+
+    return {
+      name: user.name,
+      email: user.email,
+    };
+  }
+
+  async reset(request: ResetPasswordRequest): Promise<UserResponse> {
+    const resetPasswordRequest: ResetPasswordRequest =
+      await this.validationService.validate(
+        UserValidation.RESET_PASSWORD,
+        request,
+      );
+    try {
+      const payload = await this.jwtService.verify(resetPasswordRequest.token, {
+        secret: process.env.JWT_SECRET,
+      });
+
+      const { userId } = payload;
+
+      let user = await this.prismaService.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (!user) {
+        throw new HttpException('User not found!', 404);
+      }
+
+      user = await this.prismaService.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          password: await bcrypt.hash(resetPasswordRequest.newPassword, 10),
+        },
+      });
+
+      return {
+        name: user.name,
+        email: user.email,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token!');
     }
   }
 

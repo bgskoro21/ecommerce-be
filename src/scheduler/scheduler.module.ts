@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { join, resolve } from 'path';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { EmailVerificationScheduler } from './verification.service';
+import { SendEmailSchedulerService } from './email.scheduler';
 
 @Module({
   imports: [
@@ -44,7 +44,7 @@ import { EmailVerificationScheduler } from './verification.service';
       },
     }),
   ],
-  providers: [EmailVerificationScheduler],
-  exports: [EmailVerificationScheduler],
+  providers: [SendEmailSchedulerService],
+  exports: [SendEmailSchedulerService],
 })
 export class SchedulerModule {}

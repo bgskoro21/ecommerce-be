@@ -1,8 +1,18 @@
-import { Body, Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import {
+  ForgotPasswordRequest,
   LoginUserRequest,
   RegisterUserRequest,
+  ResetPasswordRequest,
   UserResponse,
 } from 'src/model/user.model';
 import { WebResponse } from 'src/model/web.model';
@@ -104,6 +114,45 @@ export class UserController {
       statusCode: 200,
       message: 'Refresh token successfully!',
       data: tokens,
+    };
+  }
+
+  @Post('/verify')
+  @HttpCode(200)
+  async verify(
+    @Body('token') token: string,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.userService.verify(token);
+
+    return {
+      statusCode: 200,
+      data: result,
+    };
+  }
+
+  @Post('/forgot-password')
+  @HttpCode(200)
+  async forgot(
+    @Body() request: ForgotPasswordRequest,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.userService.forgot(request);
+
+    return {
+      statusCode: 200,
+      data: result,
+    };
+  }
+
+  @Post('/reset-password')
+  @HttpCode(200)
+  async reset(
+    @Body() request: ResetPasswordRequest,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.userService.reset(request);
+
+    return {
+      statusCode: 200,
+      data: result,
     };
   }
 

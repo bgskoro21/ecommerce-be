@@ -3,12 +3,12 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { EmailService } from 'src/common/email.service';
 import { PrismaService } from 'src/common/prisma.service';
-import { EmailConfig } from 'src/model/email.model';
+import { EmailConfig, EmailType } from 'src/model/email.model';
 import { Logger } from 'winston';
 import * as jwt from 'jsonwebtoken';
 
 @Injectable()
-export class EmailVerificationScheduler {
+export class SendEmailSchedulerService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly emailService: EmailService,
@@ -20,24 +20,40 @@ export class EmailVerificationScheduler {
     this.logger.debug('checkPendingEmails is running');
     const pendingEmails = await this.prismaService.emailLog.findMany({
       where: {
-        AND: [{ status: 'Pending' }, { type: 'EmailVerification' }],
+        AND: [{ status: 'Pending' }],
       },
     });
 
     for (const log of pendingEmails) {
       try {
-        await this.emailService.sendEmail({
-          email: log.email,
-          subject: 'Email Verification',
-          template: './verification',
-          url: `${process.env.APP_URL}/verify?token=${this.generateVerificationToken(log.userId)}`,
-        } as EmailConfig);
+        switch (log.type) {
+          case EmailType.EMAIL_VERIFICATION:
+            await this.emailService.sendEmail({
+              email: log.email,
+              subject: 'Email Verification',
+              template: './verification',
+              url: `${process.env.APP_URL}/verify?token=${this.generateToken(log.userId)}`,
+            } as EmailConfig);
+            break;
+          case EmailType.FORGOT_PASSWORD:
+            await this.emailService.sendEmail({
+              email: log.email,
+              subject: 'Forgot Password',
+              template: './forgot_password',
+              url: `${process.env.APP_URL}/reset-password?token=${this.generateToken(log.userId)}`,
+            } as EmailConfig);
+            break;
+          default:
+            this.logger.warn(`Unknown email type: ${log.type}`);
+            continue;
+        }
 
         await this.prismaService.emailLog.update({
           where: { id: log.id },
           data: { status: 'sent' },
         });
       } catch (error) {
+        console.log(`Error : ${error}`);
         await this.prismaService.emailLog.update({
           where: { id: log.id },
           data: { status: 'failed' },
@@ -46,7 +62,7 @@ export class EmailVerificationScheduler {
     }
   }
 
-  private generateVerificationToken(userId: string): string {
+  private generateToken(userId: string): string {
     const secretKey = process.env.JWT_SECRET;
     const expiresIn = '1h';
 
