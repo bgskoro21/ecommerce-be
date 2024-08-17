@@ -28,9 +28,9 @@ export class EmailVerificationScheduler {
       try {
         await this.emailService.sendEmail({
           email: log.email,
-          token: this.generateVerificationToken(log.userId),
           subject: 'Email Verification',
           template: './verification',
+          url: `${process.env.APP_URL}/verify?token=${this.generateVerificationToken(log.userId)}`,
         } as EmailConfig);
 
         await this.prismaService.emailLog.update({

@@ -31,6 +31,17 @@ import { EmailVerificationScheduler } from './verification.service';
           strict: true,
         },
       },
+      options: {
+        partials: {
+          dir:
+            process.env.NODE_ENV === 'production'
+              ? join(__dirname, './templates/partials')
+              : resolve('src/templates/partials'),
+        },
+        options: {
+          strict: true,
+        },
+      },
     }),
   ],
   providers: [EmailVerificationScheduler],
