@@ -7,6 +7,7 @@ import {
 } from 'src/model/user.model';
 import { WebResponse } from 'src/model/web.model';
 import { Request, Response } from 'express';
+import { Role } from '@prisma/client';
 
 @Controller('/api/users')
 export class UserController {
@@ -32,6 +33,32 @@ export class UserController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<WebResponse<UserResponse>> {
     const result = await this.userService.login(request);
+    response.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 15 * 60 * 1000, // 15 menit
+    });
+
+    response.cookie('refreshToken', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+    });
+
+    return {
+      statusCode: 200,
+      message: 'Login Successfully!',
+      data: result,
+    };
+  }
+
+  @Post('/google-login')
+  async googleLogin(
+    @Body() { code, role }: { code: string; role: Role },
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<WebResponse<UserResponse>> {
+    const result = await this.userService.googleLogin({ code, role });
+
     response.cookie('accessToken', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

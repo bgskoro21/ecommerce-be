@@ -16,6 +16,9 @@ import { Logger } from 'winston';
 import { UserValidation } from './user.validation';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class UserService {
@@ -24,6 +27,7 @@ export class UserService {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private prismaService: PrismaService,
     private jwtService: JwtService,
+    private httpService: HttpService,
   ) {}
 
   async register(request: RegisterUserRequest): Promise<UserResponse> {
@@ -101,9 +105,75 @@ export class UserService {
       throw new HttpException('Email or password is wrong!', 401);
     }
 
+    if (!user.verifiedAt) {
+      throw new HttpException("Email doesn't have verified!", 401);
+    }
+
     const tokens = await this.generateTokens(user.id, user.email);
 
     return tokens;
+  }
+
+  async googleLogin({
+    code,
+    role,
+  }: {
+    code: string;
+    role: Role;
+  }): Promise<UserResponse> {
+    const tokenUrl = 'https://oauth2.googleapis.com/token';
+    const userInfoUrl =
+      'https://www.googleapis.com/oauth2/v1/userinfo?alt=json';
+
+    const { data: tokenData } = await firstValueFrom(
+      this.httpService.post(tokenUrl, {
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: 'http://localhost:3000/api/users/google-login',
+        grant_type: 'authorization_code',
+      }),
+    );
+
+    const { access_token } = tokenData;
+
+    const { data: userInfo } = await firstValueFrom(
+      this.httpService.get(userInfoUrl, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }),
+    );
+
+    let user = await this.prismaService.user.findFirst({
+      where: {
+        email: userInfo.email,
+      },
+    });
+
+    if (!user) {
+      await this.prismaService.$transaction(async (prisma) => {
+        user = await prisma.user.create({
+          data: {
+            email: userInfo.email,
+            name: userInfo.given_name,
+            verifiedAt: new Date(),
+            role,
+          },
+        });
+
+        if (user.role === 'STORE_OWNER') {
+          await prisma.store.create({
+            data: {
+              userId: user.id,
+              name: user.name,
+            },
+          });
+        }
+      });
+    }
+
+    return await this.generateTokens(user.id, user.email);
   }
 
   async generateTokens(userId: string, email: string) {
