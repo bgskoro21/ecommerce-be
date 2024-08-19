@@ -53,7 +53,6 @@ export class SendEmailSchedulerService {
           data: { status: 'sent' },
         });
       } catch (error) {
-        console.log(`Error : ${error}`);
         await this.prismaService.emailLog.update({
           where: { id: log.id },
           data: { status: 'failed' },

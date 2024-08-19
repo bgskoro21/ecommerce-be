@@ -107,10 +107,6 @@ export class UserService {
       throw new HttpException('Email or password is wrong!', 401);
     }
 
-    if (!user.verifiedAt) {
-      throw new HttpException("Email doesn't have verified!", 401);
-    }
-
     const tokens = await this.generateTokens(user.id, user.email);
 
     return tokens;

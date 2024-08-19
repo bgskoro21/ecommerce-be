@@ -7,6 +7,7 @@ import { ValidationService } from './validation.service';
 import { APP_FILTER } from '@nestjs/core';
 import { ErrorFilter } from './error.filter';
 import { EmailService } from './email.service';
+import { JwtStrategy } from './jwt.strategy';
 
 @Global()
 @Module({
@@ -27,6 +28,7 @@ import { EmailService } from './email.service';
       useClass: ErrorFilter,
     },
     EmailService,
+    JwtStrategy,
   ],
   exports: [PrismaService, ValidationService, EmailService],
 })
