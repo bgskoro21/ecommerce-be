@@ -22,16 +22,30 @@ model User {
   address   String?
   refreshToken String?
   role      Role       @default(CUSTOMER)
-  stores    Store[]
   carts     Cart[]
   orders    Order[]
   reviews   Review[]
+  store    Store?     
+  customer Customer?
   emailLogs EmailLog[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   verifiedAt DateTime?
 
   @@map("users")
+}
+
+model Customer{
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  avatar    String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId])
+
+  @@map("customers")
 }
 
 model Store {
@@ -44,6 +58,8 @@ model Store {
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@unique([userId])
 
   @@map("stores")
 }
