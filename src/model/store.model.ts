@@ -9,5 +9,4 @@ class StoreResponse {
   userId: string;
   name: string;
   description: string;
-  logo: string;
 }

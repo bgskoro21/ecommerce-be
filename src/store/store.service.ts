@@ -29,7 +29,6 @@ export class StoreService {
       data: {
         name: updateStoreRequest.name,
         description: updateStoreRequest.description,
-        logo: updateStoreRequest.logo,
       },
     });
 
