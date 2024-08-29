@@ -169,6 +169,25 @@ export class UserService {
           });
         }
       });
+    } else {
+      // Jika user ditemukan dan role mereka bukan STORE_OWNER
+      if (user.role !== Role.STORE_OWNER && role === Role.STORE_OWNER) {
+        await this.prismaService.$transaction(async (prisma) => {
+          // Update role user
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { role: Role.STORE_OWNER },
+          });
+
+          // Buat store baru untuk user ini
+          await prisma.store.create({
+            data: {
+              userId: user.id,
+              name: user.name,
+            },
+          });
+        });
+      }
     }
 
     return await this.generateTokens(user.id, user.email);
