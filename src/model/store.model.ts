@@ -1,10 +1,10 @@
-class UpdateStoreRequest {
+export class UpdateStoreRequest {
   name: string;
   description?: string;
   logo?: string;
 }
 
-class StoreResponse {
+export class StoreResponse {
   id: string;
   userId: string;
   name: string;

@@ -19,7 +19,6 @@ import {
 import { WebResponse } from 'src/model/web.model';
 import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
-import { AuthGuard } from '@nestjs/passport';
 import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
 
 @Controller('/api/users')
@@ -134,7 +133,6 @@ export class UserController {
   }
 
   @Post('/forgot-password')
-  @UseGuards(JwtCookieAuthGuard)
   @HttpCode(200)
   async forgot(
     @Body() request: ForgotPasswordRequest,

@@ -16,6 +16,11 @@ export class JwtCookieAuthGuard extends AuthGuard('jwt') {
     if (err || !user) {
       throw err || new UnauthorizedException();
     }
+    // Akses request object dari ExecutionContext
+    const request = context.switchToHttp().getRequest();
+
+    request.user = user;
+
     return user;
   }
 
