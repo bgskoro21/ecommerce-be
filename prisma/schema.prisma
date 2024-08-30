@@ -41,6 +41,8 @@ model Store {
   userId      String
   name        String
   description String?
+  logo        String?
+  address     String?
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

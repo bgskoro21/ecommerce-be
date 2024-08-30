@@ -14,5 +14,9 @@ export class StoreValidation {
       .string()
       .max(255, { message: 'Logo URL should not exceed 255 characters.' })
       .optional(),
+    address: z
+      .string()
+      .max(255, { message: 'Address should not exceed 255 characters.' })
+      .optional(),
   });
 }
