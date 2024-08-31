@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Req,
+  SetMetadata,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -16,6 +17,8 @@ import { StoreResponse, UpdateStoreRequest } from '../model/store.model';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { RolesGuard } from 'src/common/roles.guard';
+import { Role } from '@prisma/client';
 
 @Controller('/api/store')
 export class StoreController {
@@ -36,7 +39,8 @@ export class StoreController {
       }),
     }),
   )
-  @UseGuards(JwtCookieAuthGuard)
+  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @SetMetadata('roles', [Role.STORE_OWNER])
   async update(
     @Req() req,
     @Body() request: UpdateStoreRequest,

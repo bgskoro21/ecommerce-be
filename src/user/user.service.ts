@@ -107,7 +107,7 @@ export class UserService {
       throw new HttpException('Email or password is wrong!', 401);
     }
 
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
 
     return tokens;
   }
@@ -190,11 +190,11 @@ export class UserService {
       }
     }
 
-    return await this.generateTokens(user.id, user.email);
+    return await this.generateTokens(user.id, user.email, user.role);
   }
 
-  private async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+  private async generateTokens(userId: string, email: string, role: Role) {
+    const payload = { sub: userId, email, role };
 
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: '15m', // Access Token valid selama 15 menit
@@ -222,14 +222,18 @@ export class UserService {
 
       const user = await this.prismaService.user.findUnique({
         where: { id: userId },
-        select: { refreshToken: true },
+        select: { refreshToken: true, role: true },
       });
 
       if (user.refreshToken !== refreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const newTokens = await this.generateTokens(userId, payload.email);
+      const newTokens = await this.generateTokens(
+        userId,
+        payload.email,
+        user.role,
+      );
       return newTokens;
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token!');
