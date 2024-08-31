@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   HttpCode,
-  Param,
   Post,
   Req,
   SetMetadata,
