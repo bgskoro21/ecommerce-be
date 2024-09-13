@@ -45,13 +45,9 @@ export class StoreController {
     @Body() request: UpdateStoreRequest,
     @UploadedFile() file?,
   ): Promise<WebResponse<StoreResponse>> {
-    let logoPath: string | undefined;
-    if (file) {
-      logoPath = `/uploads/${file.filename}`;
-    }
     const result = await this.storeService.update(req.user.email, {
       ...request,
-      logo: logoPath,
+      logo: file.path,
     });
 
     return {

@@ -8,6 +8,7 @@ import { APP_FILTER } from '@nestjs/core';
 import { ErrorFilter } from './error.filter';
 import { EmailService } from './email.service';
 import { JwtStrategy } from './jwt.strategy';
+import { UtilsService } from './utils.service';
 
 @Global()
 @Module({
@@ -29,7 +30,8 @@ import { JwtStrategy } from './jwt.strategy';
     },
     EmailService,
     JwtStrategy,
+    UtilsService,
   ],
-  exports: [PrismaService, ValidationService, EmailService],
+  exports: [PrismaService, ValidationService, EmailService, UtilsService],
 })
 export class CommonModule {}

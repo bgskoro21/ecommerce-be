@@ -61,7 +61,7 @@ export class StoreService {
 
     return {
       ...store,
-      logo: store.logo ? `${process.env.APP_URL}${store.logo}` : null,
+      logo: store.logo ? `${process.env.APP_URL}/${store.logo}` : null,
     };
   }
 }

@@ -26,7 +26,8 @@ model User {
   carts     Cart[]
   orders    Order[]
   reviews   Review[]
-  store     Store?     
+  store     Store?
+  variantTypes VariantType[]     
   emailLogs EmailLog[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -60,8 +61,8 @@ model Product {
   description String?
   basePrice   Decimal   @db.Decimal(15, 2)
   hasVariants Boolean   @default(false)
-  image       String?
   stock       Int       @default(0)
+  productImages ProductImage[]
   variants    ProductVariant[]
   cartItems   CartItem[]
   orderItems  OrderItem[]
@@ -72,20 +73,56 @@ model Product {
   @@map("products")
 }
 
+model ProductImage {
+  id          String @id @default(uuid())
+  product     Product @relation(fields: [productId], references: [id])
+  productId   String
+  image       String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("product_images")
+}
+
 model ProductVariant {
   id             String    @id @default(uuid())
   product        Product   @relation(fields: [productId], references: [id])
   productId      String
-  variantName    String
-  variantValue   String
+  variantOptions ProductVariantOption[]
   priceAdjustment Decimal  @default(0.00) @db.Decimal(15, 2)
   stock          Int       @default(0)
+  image          String?
   cartItems      CartItem[]    // Relasi balik ke CartItem
   orderItems     OrderItem[] 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@map("product_variants")
+}
+
+model ProductVariantOption {
+  id          String        @id @default(uuid())
+  variantType VariantType   @relation(fields: [variantTypeId], references: [id])
+  variantTypeId String
+  value       String
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  variantId   String
+
+  @@map("product_variant_options")
+}
+
+model VariantType {
+  id          String        @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId   String
+  name        String
+  options     ProductVariantOption[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+
+  @@map("variant_types")
 }
 
 model Cart {
