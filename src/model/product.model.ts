@@ -20,3 +20,25 @@ class CreateProductVariantOptionRequest {
   variantTypeId: string;
   value: string;
 }
+
+export class UpdateProductRequest {
+  name?: string;
+  description?: string;
+  basePrice?: string;
+  stock?: string;
+  productImages?: Array<MemoryStoredFile>;
+  variants?: UpdateProductVariantRequest[];
+}
+
+class UpdateProductVariantRequest {
+  id?: string; // Field 'id' untuk mengidentifikasi varian yang ada
+  priceAdjustment?: string;
+  stock?: string;
+  variantImage?: MemoryStoredFile;
+  variantOptions: UpdateProductVariantOptionRequest[];
+}
+
+class UpdateProductVariantOptionRequest {
+  variantTypeId: string;
+  value: string;
+}

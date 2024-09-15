@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Param,
   Post,
   Req,
   SetMetadata,
@@ -13,7 +14,10 @@ import { ProductService } from './product.service';
 import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
 import { RolesGuard } from 'src/common/roles.guard';
 import { Role } from '@prisma/client';
-import { CreateProductRequest } from 'src/model/product.model';
+import {
+  CreateProductRequest,
+  UpdateProductRequest,
+} from 'src/model/product.model';
 import {
   AnyFilesInterceptor,
   FileInterceptor,
@@ -28,7 +32,9 @@ import { UtilsService } from 'src/common/utils.service';
 export class ProductController {
   constructor(private productService: ProductService) {}
 
-  private parseVariants(request: CreateProductRequest): any[] {
+  private parseVariants(
+    request: CreateProductRequest | UpdateProductRequest,
+  ): any[] {
     const variants = [];
     let index = 0;
 
@@ -74,6 +80,27 @@ export class ProductController {
     const result = await this.productService.create(req.userId, request);
     return {
       statusCode: 201,
+      data: result,
+    };
+  }
+
+  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @SetMetadata('roles', [Role.STORE_OWNER])
+  @Post(':productId')
+  @FormDataRequest()
+  async update(
+    @Req() req,
+    @Body() request: UpdateProductRequest,
+    @Param('productId') productId: string,
+  ) {
+    const result = await this.productService.update(
+      req.userId,
+      productId,
+      request,
+    );
+
+    return {
+      statusCode: 200,
       data: result,
     };
   }
