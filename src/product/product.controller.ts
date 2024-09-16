@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Param,
   Post,
   Req,
@@ -102,6 +103,21 @@ export class ProductController {
     return {
       statusCode: 200,
       data: result,
+    };
+  }
+
+  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @SetMetadata('roles', [Role.STORE_OWNER])
+  @Delete(':productId')
+  async destroy(@Req() req, @Param('productId') productId: string) {
+    const result = await this.productService.deleteProduct(
+      req.userId,
+      productId,
+    );
+
+    return {
+      statusCode: 200,
+      message: result.message,
     };
   }
 }

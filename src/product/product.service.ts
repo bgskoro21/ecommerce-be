@@ -295,4 +295,80 @@ export class ProductService {
       return updatedProduct;
     });
   }
+
+  async deleteProduct(userId: string, productId: string) {
+    this.logger.info(`Delete product ${productId} by user ${userId}`);
+
+    // Cari store berdasarkan userId
+    const store = await this.prismaService.store.findFirst({
+      where: { userId: userId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found!');
+    }
+
+    // Cek apakah produk ada
+    const product = await this.prismaService.product.findFirst({
+      where: { id: productId, shopId: store.id },
+      include: {
+        productImages: true,
+        variants: {
+          include: { variantOptions: true },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found!');
+    }
+
+    return this.prismaService.$transaction(async (prisma) => {
+      // Hapus gambar produk dari storage
+      for (const image of product.productImages) {
+        try {
+          await fs.unlink(image.image);
+          this.logger.info(`Product image removed: ${image.image}`);
+        } catch (err) {
+          this.logger.warn(`Failed to remove product image: ${image.image}`);
+        }
+      }
+
+      // Hapus varian dan opsi varian
+      for (const variant of product.variants) {
+        for (const option of variant.variantOptions) {
+          await prisma.productVariantOption.delete({
+            where: { id: option.id },
+          });
+        }
+        // Hapus varian setelah opsi variannya dihapus
+        if (variant.image) {
+          try {
+            await fs.unlink(variant.image);
+            this.logger.info(`Variant image removed: ${variant.image}`);
+          } catch (err) {
+            this.logger.warn(
+              `Failed to remove variant image: ${variant.image}`,
+            );
+          }
+        }
+        await prisma.productVariant.delete({
+          where: { id: variant.id },
+        });
+      }
+
+      // Hapus gambar dari database
+      await prisma.productImage.deleteMany({
+        where: { productId: productId },
+      });
+
+      // Hapus produk
+      await prisma.product.delete({
+        where: { id: product.id },
+      });
+
+      this.logger.info(`Product ${productId} deleted successfully.`);
+      return { message: 'Product deleted successfully.' };
+    });
+  }
 }
