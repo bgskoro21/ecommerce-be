@@ -20,6 +20,51 @@ export class ProductService {
     private utilsService: UtilsService,
   ) {}
 
+  async getProducts(
+    userId: string,
+    search: string,
+    page: number,
+    limit: number,
+  ) {
+    const skip = (page - 1) * limit;
+
+    const store = await this.prismaService.store.findFirst({
+      where: { userId: userId },
+    });
+
+    // Build query condition based on search parameter
+    const whereCondition = {
+      shopId: store.id, // Tambahkan kondisi shopId
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { description: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    // Fetch products with pagination
+    const products = await this.prismaService.product.findMany({
+      where: whereCondition as any,
+      skip: skip,
+      take: limit,
+    });
+
+    // Get total count of products for pagination
+    const totalCount = await this.prismaService.product.count({
+      where: whereCondition as any,
+    });
+
+    return {
+      data: products,
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      currentPage: page,
+    };
+  }
+
   async create(userId: string, request: CreateProductRequest) {
     this.logger.info(`Create product from ${userId}`);
     const req: CreateProductRequest = await this.validationService.validate(

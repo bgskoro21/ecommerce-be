@@ -2,8 +2,10 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Post,
+  Query,
   Req,
   SetMetadata,
   UseGuards,
@@ -59,6 +61,18 @@ export class ProductController {
     }
 
     return variants;
+  }
+
+  @Get()
+  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @SetMetadata('roles', [Role.STORE_OWNER])
+  async getProducts(
+    @Req() req,
+    @Query('search') search?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.productService.getProducts(req.userId, search, page, limit);
   }
 
   @UseGuards(JwtCookieAuthGuard, RolesGuard)
