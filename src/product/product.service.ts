@@ -8,11 +8,7 @@ import {
 } from 'src/model/product.model';
 import { Logger } from 'winston';
 import { ProductValidation } from './product.validation';
-import path, { extname } from 'path';
-import { writeFileSync } from 'fs';
-import { randomUUID } from 'crypto';
 import { UtilsService } from 'src/common/utils.service';
-import { ProductImage } from '@prisma/client';
 import { promises as fs } from 'fs';
 
 @Injectable()
@@ -369,6 +365,69 @@ export class ProductService {
 
       this.logger.info(`Product ${productId} deleted successfully.`);
       return { message: 'Product deleted successfully.' };
+    });
+  }
+
+  async deleteProductVariant(
+    userId: string,
+    productId: string,
+    variantId: string,
+  ) {
+    this.logger.info(
+      `Delete variant ${variantId} for product ${productId} by user ${userId}`,
+    );
+
+    // Cari store berdasarkan userId
+    const store = await this.prismaService.store.findFirst({
+      where: { userId: userId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found!');
+    }
+
+    // Cek apakah varian dari produk ada
+    const productVariant = await this.prismaService.productVariant.findFirst({
+      where: {
+        id: variantId,
+        productId: productId,
+      },
+      include: {
+        variantOptions: true,
+      },
+    });
+
+    if (!productVariant) {
+      throw new NotFoundException('Product variant not found!');
+    }
+
+    return this.prismaService.$transaction(async (prisma) => {
+      // Hapus opsi varian terkait
+      for (const option of productVariant.variantOptions) {
+        await prisma.productVariantOption.delete({
+          where: { id: option.id },
+        });
+      }
+
+      // Hapus gambar varian dari storage jika ada
+      if (productVariant.image) {
+        try {
+          await fs.unlink(productVariant.image);
+          this.logger.info(`Variant image removed: ${productVariant.image}`);
+        } catch (err) {
+          this.logger.warn(
+            `Failed to remove variant image: ${productVariant.image}`,
+          );
+        }
+      }
+
+      // Hapus varian dari database
+      await prisma.productVariant.delete({
+        where: { id: productVariant.id },
+      });
+
+      this.logger.info(`Product variant ${variantId} deleted successfully.`);
+      return { message: 'Product variant deleted successfully.' };
     });
   }
 }

@@ -6,10 +6,7 @@ import {
   Post,
   Req,
   SetMetadata,
-  UploadedFile,
-  UploadedFiles,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
@@ -19,15 +16,7 @@ import {
   CreateProductRequest,
   UpdateProductRequest,
 } from 'src/model/product.model';
-import {
-  AnyFilesInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { FormDataRequest, MemoryStoredFile } from 'nestjs-form-data';
-import { UtilsService } from 'src/common/utils.service';
+import { FormDataRequest } from 'nestjs-form-data';
 
 @Controller('/api/products')
 export class ProductController {
@@ -113,6 +102,26 @@ export class ProductController {
     const result = await this.productService.deleteProduct(
       req.userId,
       productId,
+    );
+
+    return {
+      statusCode: 200,
+      message: result.message,
+    };
+  }
+
+  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @SetMetadata('roles', [Role.STORE_OWNER])
+  @Delete(':productId/variants/:variantId')
+  async destroyProductVariant(
+    @Req() req,
+    @Param('productId') productId: string,
+    @Param('variantId') variantId: string,
+  ) {
+    const result = await this.productService.deleteProductVariant(
+      req.userId,
+      productId,
+      variantId,
     );
 
     return {
