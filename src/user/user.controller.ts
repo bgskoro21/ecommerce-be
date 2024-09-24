@@ -6,7 +6,6 @@ import {
   Post,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -19,7 +18,6 @@ import {
 import { WebResponse } from 'src/model/web.model';
 import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
-import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
 
 @Controller('/api/users')
 export class UserController {
@@ -42,20 +40,8 @@ export class UserController {
   @HttpCode(200)
   async login(
     @Body() request: LoginUserRequest,
-    @Res({ passthrough: true }) response: Response,
   ): Promise<WebResponse<UserResponse>> {
     const result = await this.userService.login(request);
-    response.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000, // 15 menit
-    });
-
-    response.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
-    });
 
     return {
       statusCode: 200,
@@ -67,21 +53,8 @@ export class UserController {
   @Post('/google-login')
   async googleLogin(
     @Body() { code, role }: { code: string; role: Role },
-    @Res({ passthrough: true }) response: Response,
   ): Promise<WebResponse<UserResponse>> {
     const result = await this.userService.googleLogin({ code, role });
-
-    response.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000, // 15 menit
-    });
-
-    response.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
-    });
 
     return {
       statusCode: 200,
@@ -92,25 +65,10 @@ export class UserController {
 
   @Post('/refresh')
   @HttpCode(200)
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) response: Response,
-  ): Promise<WebResponse<UserResponse>> {
+  async refresh(@Req() req: Request): Promise<WebResponse<UserResponse>> {
     const refreshToken = req.cookies['refreshToken'];
 
     const tokens = await this.userService.refresh(refreshToken);
-
-    response.cookie('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000, // 15 menit
-    });
-
-    response.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
-    });
 
     return {
       statusCode: 200,

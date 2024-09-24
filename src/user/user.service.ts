@@ -18,7 +18,7 @@ import { Logger } from 'winston';
 import { UserValidation } from './user.validation';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { Role, User } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 
@@ -95,7 +95,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new HttpException('Email or password is wrong!', 401);
+      throw new HttpException('Email or password is wrong!', 403);
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -104,7 +104,7 @@ export class UserService {
     );
 
     if (!isPasswordValid) {
-      throw new HttpException('Email or password is wrong!', 401);
+      throw new HttpException('Email or password is wrong!', 403);
     }
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
@@ -170,16 +170,13 @@ export class UserService {
         }
       });
     } else {
-      // Jika user ditemukan dan role mereka bukan STORE_OWNER
       if (user.role !== Role.STORE_OWNER && role === Role.STORE_OWNER) {
         await this.prismaService.$transaction(async (prisma) => {
-          // Update role user
           await prisma.user.update({
             where: { id: user.id },
             data: { role: Role.STORE_OWNER },
           });
 
-          // Buat store baru untuk user ini
           await prisma.store.create({
             data: {
               userId: user.id,
@@ -197,11 +194,11 @@ export class UserService {
     const payload = { sub: userId, email, role };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m', // Access Token valid selama 15 menit
+      expiresIn: '1h',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: '7d', // Refresh Token valid selama 7 hari
+      expiresIn: '7d',
     });
 
     await this.prismaService.user.update({
@@ -226,7 +223,7 @@ export class UserService {
       });
 
       if (user.refreshToken !== refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new HttpException('Invalid refresh token', 400);
       }
 
       const newTokens = await this.generateTokens(
@@ -236,7 +233,7 @@ export class UserService {
       );
       return newTokens;
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token!');
+      throw new HttpException('Invalid refresh token!', 400);
     }
   }
 

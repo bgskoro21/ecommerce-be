@@ -7,6 +7,10 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  app.enableCors({
+    origin: 'http://localhost:3000', // Sesuaikan dengan URL frontend Anda
+    credentials: true,
+  });
   app.useLogger(logger);
   app.use(cookieParser());
   app.useGlobalPipes(
@@ -14,6 +18,6 @@ async function bootstrap() {
       transform: true, // Transform is recomended configuration for avoind issues with arrays of files transformations
     }),
   );
-  await app.listen(3000);
+  await app.listen(3001);
 }
 bootstrap();
