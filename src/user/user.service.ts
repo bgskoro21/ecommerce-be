@@ -43,6 +43,7 @@ export class UserService {
         email: registerRequest.email,
       },
     });
+    console.log(totalUserWithSameEmail);
 
     if (totalUserWithSameEmail != 0) {
       throw new HttpException('Email already exists!', 400);
@@ -50,9 +51,11 @@ export class UserService {
 
     registerRequest.password = await bcrypt.hash(registerRequest.password, 10);
 
+    const { confirmPassword, ...sanitizedRequest } = request;
+
     return await this.prismaService.$transaction(async (prisma) => {
       const user = await prisma.user.create({
-        data: registerRequest,
+        data: sanitizedRequest,
       });
 
       if (user.role === 'STORE_OWNER') {

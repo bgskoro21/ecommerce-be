@@ -32,6 +32,8 @@ export class UserController {
 
     return {
       statusCode: 201,
+      message:
+        'Successfully created your account! Please check your email for verification.',
       data: result,
     };
   }

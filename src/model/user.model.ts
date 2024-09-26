@@ -8,9 +8,8 @@ export enum UserRole {
 export class RegisterUserRequest {
   name: string;
   password: string;
+  confirmPassword: string;
   email: string;
-  phone: string;
-  address: string;
   role: UserRole;
 }
 
