@@ -43,7 +43,6 @@ export class UserService {
         email: registerRequest.email,
       },
     });
-    console.log(totalUserWithSameEmail);
 
     if (totalUserWithSameEmail != 0) {
       throw new HttpException('Email already exists!', 400);
