@@ -337,7 +337,7 @@ export class UserService {
         email: user.email,
       };
     } catch (error) {
-      throw new UnauthorizedException('Invalid token!');
+      throw new HttpException('Invalid token!', 403);
     }
   }
 
