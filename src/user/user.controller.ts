@@ -6,6 +6,7 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import {
@@ -18,6 +19,7 @@ import {
 import { WebResponse } from 'src/model/web.model';
 import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
+import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
 
 @Controller('/api/users')
 export class UserController {
@@ -48,6 +50,19 @@ export class UserController {
     return {
       statusCode: 200,
       message: 'Login Successfully!',
+      data: result,
+    };
+  }
+
+  @Get('me')
+  @UseGuards(JwtCookieAuthGuard)
+  @HttpCode(200)
+  async me(@Req() request): Promise<WebResponse<UserResponse>> {
+    const result = await this.userService.me(request.user.userId);
+
+    return {
+      statusCode: 200,
+      message: 'Get user success',
       data: result,
     };
   }

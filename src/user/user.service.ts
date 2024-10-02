@@ -114,6 +114,30 @@ export class UserService {
     return tokens;
   }
 
+  async me(userId: string): Promise<UserResponse | null> {
+    const user = await this.prismaService.user.findFirst({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        verifiedAt: true,
+        phone: true,
+        address: true,
+        role: true,
+        avatar: true,
+      },
+    });
+
+    if (!user) {
+      throw new HttpException('User not found.', 404);
+    }
+
+    return user;
+  }
+
   async googleLogin({
     code,
     role,
