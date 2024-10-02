@@ -27,15 +27,11 @@ export class JwtCookieAuthGuard extends AuthGuard('jwt') {
   getRequest(context: ExecutionContext): Request {
     const ctx = context.switchToHttp();
     const request = ctx.getRequest<Request>();
-    // Extract the JWT from the cookies
     const token = request.cookies['accessToken'] || null;
 
     if (!token) {
       throw new UnauthorizedException('No JWT token found in cookies');
     }
-
-    // Set the token in the authorization header for the default JwtStrategy
-    request.headers.authorization = `Bearer ${token}`;
 
     return request;
   }
