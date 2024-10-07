@@ -10,7 +10,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
-import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
 import { WebResponse } from 'src/model/web.model';
 import { StoreResponse, UpdateStoreRequest } from '../model/store.model';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -18,6 +17,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { RolesGuard } from 'src/common/roles.guard';
 import { Role } from '@prisma/client';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('/api/store')
 export class StoreController {
@@ -38,7 +38,7 @@ export class StoreController {
       }),
     }),
   )
-  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @SetMetadata('roles', [Role.STORE_OWNER])
   async update(
     @Req() req,

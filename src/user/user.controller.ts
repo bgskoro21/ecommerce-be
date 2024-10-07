@@ -19,7 +19,7 @@ import {
 import { WebResponse } from 'src/model/web.model';
 import { Request, Response } from 'express';
 import { Role } from '@prisma/client';
-import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('/api/users')
 export class UserController {
@@ -44,6 +44,7 @@ export class UserController {
   @HttpCode(200)
   async login(
     @Body() request: LoginUserRequest,
+    @Res({ passthrough: true }) res,
   ): Promise<WebResponse<UserResponse>> {
     const result = await this.userService.login(request);
 
@@ -55,7 +56,7 @@ export class UserController {
   }
 
   @Get('me')
-  @UseGuards(JwtCookieAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(200)
   async me(@Req() request): Promise<WebResponse<UserResponse>> {
     const result = await this.userService.me(request.user.userId);
@@ -82,9 +83,9 @@ export class UserController {
 
   @Post('/refresh')
   @HttpCode(200)
-  async refresh(@Req() req: Request): Promise<WebResponse<UserResponse>> {
+  async refresh(@Req() req): Promise<WebResponse<UserResponse>> {
     const refreshToken = req.cookies['refreshToken'];
-
+    console.log(refreshToken);
     const tokens = await this.userService.refresh(refreshToken);
 
     return {

@@ -11,7 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
-import { JwtCookieAuthGuard } from 'src/common/jwt.guard';
 import { RolesGuard } from 'src/common/roles.guard';
 import { Role } from '@prisma/client';
 import {
@@ -19,6 +18,7 @@ import {
   UpdateProductRequest,
 } from 'src/model/product.model';
 import { FormDataRequest } from 'nestjs-form-data';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('/api/products')
 export class ProductController {
@@ -64,7 +64,7 @@ export class ProductController {
   }
 
   @Get()
-  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @SetMetadata('roles', [Role.STORE_OWNER])
   async getProducts(
     @Req() req,
@@ -75,7 +75,7 @@ export class ProductController {
     return this.productService.getProducts(req.userId, search, page, limit);
   }
 
-  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @SetMetadata('roles', [Role.STORE_OWNER])
   @Post()
   @FormDataRequest()
@@ -88,7 +88,7 @@ export class ProductController {
     };
   }
 
-  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @SetMetadata('roles', [Role.STORE_OWNER])
   @Post(':productId')
   @FormDataRequest()
@@ -109,7 +109,7 @@ export class ProductController {
     };
   }
 
-  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @SetMetadata('roles', [Role.STORE_OWNER])
   @Delete(':productId')
   async destroy(@Req() req, @Param('productId') productId: string) {
@@ -124,7 +124,7 @@ export class ProductController {
     };
   }
 
-  @UseGuards(JwtCookieAuthGuard, RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @SetMetadata('roles', [Role.STORE_OWNER])
   @Delete(':productId/variants/:variantId')
   async destroyProductVariant(
