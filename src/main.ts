@@ -8,7 +8,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
   app.enableCors({
-    origin: '*', // Sesuaikan dengan URL frontend Anda
+    origin: 'http://localhost:3000', // Sesuaikan dengan URL frontend Anda
     credentials: true,
   });
   app.useLogger(logger);

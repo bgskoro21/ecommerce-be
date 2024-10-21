@@ -139,27 +139,14 @@ export class UserService {
   }
 
   async googleLogin({
-    code,
+    access_token,
     role,
   }: {
-    code: string;
+    access_token: string;
     role: Role;
   }): Promise<UserResponse> {
-    const tokenUrl = 'https://oauth2.googleapis.com/token';
     const userInfoUrl =
       'https://www.googleapis.com/oauth2/v1/userinfo?alt=json';
-
-    const { data: tokenData } = await firstValueFrom(
-      this.httpService.post(tokenUrl, {
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: 'http://localhost:3000/api/auth/callback',
-        grant_type: 'authorization_code',
-      }),
-    );
-
-    const { access_token } = tokenData;
 
     const { data: userInfo } = await firstValueFrom(
       this.httpService.get(userInfoUrl, {
@@ -247,10 +234,6 @@ export class UserService {
         where: { id: userId },
         select: { refreshToken: true, role: true },
       });
-
-      if (user.refreshToken !== refreshToken) {
-        throw new HttpException('Invalid refresh token', 400);
-      }
 
       const newTokens = await this.generateTokens(
         userId,
@@ -371,6 +354,8 @@ export class UserService {
         secret: process.env.JWT_SECRET,
       });
 
+      console.log(payload);
+
       const userId = payload.sub;
 
       const user = await this.prismaService.user.update({
@@ -382,7 +367,7 @@ export class UserService {
 
       return user;
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token!');
+      throw new HttpException(error.message, 500);
     }
   }
 }

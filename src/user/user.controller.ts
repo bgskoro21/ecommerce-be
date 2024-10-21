@@ -70,9 +70,10 @@ export class UserController {
 
   @Post('/google-login')
   async googleLogin(
-    @Body() { code, role }: { code: string; role: Role },
+    @Body() { access_token, role }: { access_token: string; role: Role },
   ): Promise<WebResponse<UserResponse>> {
-    const result = await this.userService.googleLogin({ code, role });
+    console.log(access_token);
+    const result = await this.userService.googleLogin({ access_token, role });
 
     return {
       statusCode: 200,
@@ -83,9 +84,9 @@ export class UserController {
 
   @Post('/refresh')
   @HttpCode(200)
-  async refresh(@Req() req): Promise<WebResponse<UserResponse>> {
-    const refreshToken = req.cookies['refreshToken'];
-    console.log(refreshToken);
+  async refresh(
+    @Body() { refreshToken }: { refreshToken: string },
+  ): Promise<WebResponse<UserResponse>> {
     const tokens = await this.userService.refresh(refreshToken);
 
     return {
@@ -135,22 +136,18 @@ export class UserController {
   }
 
   @Post('/logout')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(200)
-  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const refreshToken = req.cookies['refreshToken'];
-
+  async logout(
+    @Body() { refreshToken }: { refreshToken: string },
+  ): Promise<WebResponse<UserResponse>> {
     if (refreshToken) {
-      // Hapus refresh token dari database
       await this.userService.logout(refreshToken);
     }
 
-    res.cookie('refreshToken', '', { httpOnly: true, expires: new Date(0) });
-
-    res.cookie('accessToken', '', { httpOnly: true, expires: new Date(0) });
-
-    res.json({
+    return {
       statusCode: 200,
-      message: 'Logout successfull!',
-    });
+      message: 'Logout successfully.',
+    };
   }
 }
